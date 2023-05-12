@@ -163,7 +163,7 @@ func OneDiez(tetrominoe []string, line string, index int, indTetro int) bool {
 	indexs := DiezIndex(tetrominoe[indTetro+1])
 	switch len(indexs) {
 	case 3:
-		if indexs[2] == indexs[1]+indexs[0] {
+		if indexs[2] == indexs[1]+1 && indexs[1] == indexs[0]+1 {
 			for i := range indexs {
 				if indexs[i] == index {
 					return true
