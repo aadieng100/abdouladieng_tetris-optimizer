@@ -10,18 +10,26 @@ import (
 func main() {
 	args := os.Args[1:]
 	if len(args) == 1 {
+		finalTab := [][]byte{
+			{46, 46, 46, 46},
+			{46, 46, 46, 46},
+			{46, 46, 46, 46},
+			{46, 46, 46, 46}}
 		file, err := ioutil.ReadFile(args[0])
 		if err != nil {
 			Error()
 		}
 		tetrisFile := string(file)
 		tetrominoes := LineBetween(tetrisFile)
-		VerifyCar(tetrominoes)
-		ValidTetrominoes(tetrominoes)
+		// VerifyCar(tetrominoes)
+		VerifyMinoes(tetrominoes)
 		tetrominoes = ToAlpha(tetrominoes)
 		tetrominoes = DelDotColMinoes(tetrominoes)
 		tetrominoes = DelDotLine(tetrominoes)
-		// Solve(tetrominoes)
+		// finalTab = Solve(tetrominoes, finalTab)
+		for i := range finalTab {
+			fmt.Println(finalTab[i])
+		}
 		for i := range tetrominoes {
 			for j := range tetrominoes[i] {
 				fmt.Println(tetrominoes[i][j])
@@ -54,152 +62,29 @@ func LineBetween(s string) [][]string {
 	return tabTetrominoes
 }
 
-func VerifyCar(tetrominoes [][]string) {
-	for i := range tetrominoes {
-		diez := 0
-		dot := 0
-		for j := range tetrominoes[i] {
-			line := tetrominoes[i][j]
-			for k := range line {
-				if len(line) != 4 {
-					Error()
-				}
-				if string(line[k]) == "#" {
-					diez++
-				}
-				if string(line[k]) == "." {
-					dot++
-				}
-			}
-		}
-		if diez*3 != dot {
-			Error()
-		}
-	}
-}
-
-func ValidTetrominoes(tetrominoes [][]string) bool {
-	for i := range tetrominoes {
-		ValidTetrominoe(tetrominoes[i])
-	}
-	return true
-}
-
-func ValidTetrominoe(tetrominoe []string) bool {
-	for i := range tetrominoe {
-		line := tetrominoe[i]
-		for j := range line {
-			if line == "####" {
-				return true
-			}
-			if line == ".###" || line == "###." {
-				indexs := DiezIndex(line)
-				TreeDiez(tetrominoe, i, indexs)
-				return true
-			}
-			if line == "##.." || line == ".##." || line == "..##" {
-				indexs := DiezIndex(line)
-				TwoDiez(tetrominoe, i, indexs)
-				return true
-			}
-			if string(line[j]) == "#" && line == "#..." ||
-				line == ".#.." || line == "..#." || line == "...#" {
-				OneDiez(tetrominoe, line, j, i)
-				return true
-			}
-		}
-	}
-	return false
-}
-
-func DiezIndex(line string) []int {
-	indexTab := []int{}
-	for i := range line {
-		if string(line[i]) == "#" {
-			indexTab = append(indexTab, i)
-		}
-	}
-	return indexTab
-}
-
-func TreeDiez(tetrominoe []string, index int, indexs []int) {
-	for i := 0; i < len(indexs); i++ {
-		if string(tetrominoe[index+1][indexs[i]]) == "#" {
-			return
-		}
-	}
-	Error()
-}
-
-func TwoDiez(tetrominoe []string, index int, indexs []int) bool {
-	nextIndex := DiezIndex(tetrominoe[index+1])
-	switch len(nextIndex) {
-	case 2:
-		if tetrominoe[index+1] == tetrominoe[index] {
-			return true
-		} else {
-			if nextIndex[1] == nextIndex[0]+1 {
-				for i := range nextIndex {
-					for j := range indexs {
-						if nextIndex[i] == indexs[j] {
-							return true
-						}
-					}
-				}
-			}
-		}
-	case 1:
-		for i := range indexs {
-			if indexs[i] == nextIndex[0] && tetrominoe[index+1] == tetrominoe[index+2] {
-				return true
-			}
-		}
-	}
-	Error()
-	return false
-}
-
-func OneDiez(tetrominoe []string, line string, index int, indTetro int) bool {
-	indexs := DiezIndex(tetrominoe[indTetro+1])
-	switch len(indexs) {
-	case 3:
-		if indexs[2] == indexs[1]+1 && indexs[1] == indexs[0]+1 {
-			for i := range indexs {
-				if indexs[i] == index {
-					return true
-				}
-			}
-		}
-	case 2:
-		nextIndexs := DiezIndex(tetrominoe[indTetro+2])
-		for i := range indexs {
-			if indexs[i] == index {
-				for j := range indexs {
-					if indexs[j] == nextIndexs[0] {
-						return true
-					}
-				}
-			}
-		}
-	case 1:
-		nextIndexs := DiezIndex(tetrominoe[indTetro+2])
-		if tetrominoe[indTetro+1] == line {
-			if len(nextIndexs) == 2 {
-				for i := range nextIndexs {
-					if nextIndexs[i] == index {
-						return true
-					}
-				}
-			}
-			if len(nextIndexs) == 1 && line == tetrominoe[nextIndexs[0]] &&
-				line == tetrominoe[indTetro+3] {
-				return true
-			}
-		}
-	}
-	Error()
-	return true
-}
+// func VerifyCar(tetrominoes [][]string) {
+// 	for i := range tetrominoes {
+// 		diez := 0
+// 		dot := 0
+// 		for j := range tetrominoes[i] {
+// 			line := tetrominoes[i][j]
+// 			for k := range line {
+// 				if len(line) != 4 {
+// 					Error()
+// 				}
+// 				if string(line[k]) == "#" {
+// 					diez++
+// 				}
+// 				if string(line[k]) == "." {
+// 					dot++
+// 				}
+// 			}
+// 		}
+// 		if diez*3 != dot {
+// 			Error()
+// 		}
+// 	}
+// }
 
 func ToAlpha(tab [][]string) [][]string {
 	tetrominoes := [][]string{}
@@ -278,34 +163,105 @@ func DelDotLine(tetrominoes [][]string) [][]string {
 	return finalMinoes
 }
 
-// func Solve(tetrominoes [][]string) string {
-// 	finalTab := [4][4]string{
-// 		{".", ".", ".", "."},
-// 		{".", ".", ".", "."},
-// 		{".", ".", ".", "."},
-// 		{".", ".", ".", "."}}
-// 	for i := 0 ;
-// 	fmt.Println(finalTab)
-// 	Error()
-// 	return ""
-// }
-// tmp := []string{}
-// for i := 0 ; i < len(tetrominoes) ; i++ {
+func Solve(tetrominoes [][]string, finalTab [][]byte) [][]byte {
+	for i := 0; i < len(tetrominoes); i++ {
+		finalTab = TryMinoe(tetrominoes[i], finalTab)
+	}
+	return finalTab
+}
 
-// }
-// if len(tetrominoes[i]) == 4 && len(tetrominoes[0]) != 4 {
-// 	tmp := tetrominoes[i]
-// 	tetrominoes[i] = tetrominoes[0]
-// 	tetrominoes[0] = tmp
-// }
-
-func SortMinoes(tetrominoes [][]string) [][]string {
-	for i := range tetrominoes {
-		for j := range tetrominoes[i] {
-			if len(tetrominoes[j]) > len(tetrominoes[i]) {
-				tetrominoes[i], tetrominoes[j] = tetrominoes[j], tetrominoes[i]
+func TryMinoe(tetrominoe []string, finalTab [][]byte) [][]byte {
+	fmt.Println(MinoDiezIndex(tetrominoe))
+	for i := 0; i < len(finalTab); i++ {
+		k := 0
+		for j := 0; j < len(finalTab[i]); j++ {
+			if finalTab[i][j] == 46 && i < len(tetrominoe) && k < len(tetrominoe[i]) {
+				finalTab[i][j] = tetrominoe[i][k]
+				k++
 			}
 		}
 	}
-	return tetrominoes
+	return finalTab
+}
+
+func MinoDiezIndex(tetrominoe []string) [][]int {
+	doubleTabIndex := [][]int{}
+	numberOfDiez := 0
+	numberOfDot := 0
+	for i := 0; i < len(tetrominoe); i++ {
+		tabIndex := []int{}
+		for j := 0; j < len(tetrominoe[i]); j++ {
+			if tetrominoe[i][j] == 35 {
+				numberOfDiez++
+				tabIndex = append(tabIndex, j)
+			}
+			if tetrominoe[i][j] == 46 {
+				numberOfDot++
+			}
+		}
+		if len(tabIndex) == 0 && numberOfDiez > 0 && numberOfDiez != 4 {
+			Error()
+		}
+		if len(tabIndex) != 0 {
+			doubleTabIndex = append(doubleTabIndex, tabIndex)
+		}
+	}
+	if numberOfDot != (numberOfDiez * 3) {
+		Error()
+	}
+	return doubleTabIndex
+}
+
+func VerifyMinoes(tetrominoes [][]string) {
+	for i := range tetrominoes {
+		Indexs := MinoDiezIndex(tetrominoes[i])
+		VerifyIndexs(Indexs)
+	}
+}
+
+func VerifyIndexs(Indexs [][]int) {
+	if len(Indexs) == 4 {
+		for i := range Indexs {
+			for j := range Indexs[i] {
+				if Indexs[i][j] != Indexs[0][0] {
+					Error()
+				}
+			}
+		}
+	} else if len(Indexs) == 3 {
+		count := 0
+		for i := range Indexs[0] {
+			for j := range Indexs[1] {
+				if Indexs[0][i] == Indexs[1][j] {
+					count++
+				}
+			}
+		}
+		if count == 1 {
+			for i := range Indexs[1] {
+				for j := range Indexs[2] {
+					if Indexs[1][i] == Indexs[2][j] {
+						count++
+					}
+				}
+			}
+		}
+		if count != 2 {
+			Error()
+		}
+	} else if len(Indexs) == 2 {
+		if len(Indexs[0]) == len(Indexs[1]) && (Indexs[0][0] != Indexs[1][0] || Indexs[0][1] != Indexs[1][1]) {
+			count := 0
+			for i := 0; i < len(Indexs[0]); i++ {
+				for j := 0; j < len(Indexs[1]); j++ {
+					if Indexs[0][i] == Indexs[1][j] {
+						count++
+					}
+				}
+			}
+			if count != 1 {
+				Error()
+			}
+		}
+	}
 }
