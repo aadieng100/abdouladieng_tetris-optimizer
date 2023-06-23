@@ -1,0 +1,7 @@
+k := 0
+for j := 0; j < len(finalTab[i]); j++ {
+	if finalTab[i][j] == 46 && i < len(tetrominoe) && k < len(tetrominoe[i]) {
+		finalTab[i][j] = tetrominoe[i][k]
+		k++
+	}
+}
