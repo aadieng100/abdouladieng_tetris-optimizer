@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"math"
 	"os"
-	"strings"
 )
 
 func Printer(finalTab [][]byte) {
@@ -17,250 +16,67 @@ func Printer(finalTab [][]byte) {
 	}
 }
 
-const (
-	diez = "#"
-	dot  = "."
-)
-
 func main() {
 	args := os.Args[1:]
-	if len(args) != 1 {
-		fmt.Println("Please add an argument and only one.")
+	if len(args) == 1 {
+		file, err := ioutil.ReadFile(args[0])
+		if err != nil {
+			Error()
+		}
+		tetrominoes := TabMinoes(file)
+		for i := 0; i < len(tetrominoes); i++ {
+			indexs := GetIndexs(tetrominoes[i], 0)
+			VerifMinoes(indexs)
+			//ToAlfa(tetrominoes[i], char)
+		}
+		finalTab := Solve(tetrominoes, len(tetrominoes), 0)
+		Printer(finalTab)
 		return
 	}
-	file, err := ioutil.ReadFile(args[0])
-	if err != nil {
-		Error()
-	}
-	tetrisFile := string(file)
-	tetrominoes := LineBetween(tetrisFile)
-	VerifyMinoes(tetrominoes)
-	tetrominoes = ToAlpha(tetrominoes)
-	tetrominoes = DelDotColMinoes(tetrominoes)
-	tetrominoes = DelDotLine(tetrominoes)
-	SquareSize := 0
-	finalTab := Solve(tetrominoes, SquareSize)
-	Printer(finalTab)
+	fmt.Println("Only one argument is allowed.")
 }
 
-func Error() {
-	fmt.Println("ERROR")
-	os.Exit(0)
-}
-
-func CreateFinalTab(tetrominoes [][]string, SupplyDot int) [][]byte {
-	LenFinalTab := int(math.Ceil(math.Sqrt(float64(len(tetrominoes))*4 + float64(SupplyDot))))
-	finalTab := [][]byte{}
-	for i := 0; i < LenFinalTab; i++ {
-		tabByte := []byte{}
-		for j := 0; j < LenFinalTab; j++ {
-			tabByte = append(tabByte, 46)
+func CreateTab(heigth int, supply int) [][]byte {
+	LenFinalTab := int(math.Ceil(math.Sqrt(float64(heigth)*4 + float64(supply))))
+	finalTab := make([][]byte, LenFinalTab)
+	for i := range finalTab {
+		finalTab[i] = make([]byte, LenFinalTab)
+		for j := range finalTab[i] {
+			finalTab[i][j] = 46
 		}
-		finalTab = append(finalTab, tabByte)
 	}
 	return finalTab
 }
 
-func LineBetween(s string) [][]string {
-	DoubleLineSlash := strings.Split(s, "\n\n")
-	tabTetrominoes := [][]string{}
-	for i := range DoubleLineSlash {
-		tetrominoe := strings.Split(DoubleLineSlash[i], "\n")
-		if i == len(DoubleLineSlash)-1 {
-			tetrominoe = tetrominoe[:len(tetrominoe)-1]
-		}
-		if len(tetrominoe) != 4 {
-			Error()
-		}
-		tabTetrominoes = append(tabTetrominoes, tetrominoe)
-	}
-	return tabTetrominoes
-}
-
-func MinoDiezIndex(tetrominoe []string) [][]int {
-	doubleTabIndex := [][]int{}
-	numberOfDiez := 0
-	numberOfDot := 0
-	for i := 0; i < len(tetrominoe); i++ {
-		tabIndex := []int{}
-		for j := 0; j < len(tetrominoe[i]); j++ {
-			if tetrominoe[i][j] == 35 {
-				numberOfDiez++
-				tabIndex = append(tabIndex, j)
-			}
-			if tetrominoe[i][j] == 46 {
-				numberOfDot++
-			}
-		}
-		if len(tabIndex) == 0 && numberOfDiez > 0 && numberOfDiez != 4 {
-			Error()
-		}
-		if len(tabIndex) != 0 {
-			doubleTabIndex = append(doubleTabIndex, tabIndex)
-		}
-	}
-	if numberOfDot != (numberOfDiez * 3) {
-		Error()
-	}
-	return doubleTabIndex
-}
-
-func VerifyMinoes(tetrominoes [][]string) {
-	for i := range tetrominoes {
-		Indexs := MinoDiezIndex(tetrominoes[i])
-		VerifyIndexs(Indexs)
-	}
-}
-
-func VerifyIndexs(Indexs [][]int) {
-	if len(Indexs) == 4 {
-		for i := range Indexs {
-			for j := range Indexs[i] {
-				if Indexs[i][j] != Indexs[0][0] {
-					Error()
-				}
-			}
-		}
-	} else if len(Indexs) == 3 {
-		count := 0
-		for i := range Indexs[0] {
-			for j := range Indexs[1] {
-				if Indexs[0][i] == Indexs[1][j] {
-					count++
-				}
-			}
-		}
-		if count == 1 {
-			for i := range Indexs[1] {
-				for j := range Indexs[2] {
-					if Indexs[1][i] == Indexs[2][j] {
-						count++
-					}
-				}
-			}
-		}
-		if count != 2 {
-			Error()
-		}
-	} else if len(Indexs) == 2 {
-		if len(Indexs[0]) == len(Indexs[1]) && (Indexs[0][0] != Indexs[1][0] || Indexs[0][1] != Indexs[1][1]) {
-			count := 0
-			for i := 0; i < len(Indexs[0]); i++ {
-				for j := 0; j < len(Indexs[1]); j++ {
-					if Indexs[0][i] == Indexs[1][j] {
-						count++
-					}
-				}
-			}
-			if count != 1 {
-				Error()
-			}
-		}
-	}
-}
-
-func ToAlpha(tab [][]string) [][]string {
-	tetrominoes := [][]string{}
-	tabTetro := []string{}
-	for i, char := 0, 'A'; i < len(tab); i++ {
-		tetrominoe := strings.Join(tab[i], "\\n")
-		str := ""
-		for _, car := range tetrominoe {
-			if string(car) == "#" {
-				car = char
-			}
-			str += string(car)
-		}
-		tabTetro = strings.Split(str, "\\n")
-		tetrominoes = append(tetrominoes, tabTetro)
-		tabTetro = nil
-		char++
-		if char > 'Z' {
-			Error()
-		}
-	}
-	return tetrominoes
-}
-
-func DelDotColMinoes(tetrominoes [][]string) [][]string {
-	minoesWithoutCol := [][]string{}
-	for i := 0; i < len(tetrominoes); i++ {
-		tab := DetectDot(tetrominoes[i])
-		minoesWithoutCol = append(minoesWithoutCol, tab)
-	}
-	return minoesWithoutCol
-}
-
-func DetectDot(tetrominoe []string) []string {
-	for i := 0; i < len(tetrominoe); i++ {
-		for j := 0; j < len(tetrominoe[i]); j++ {
-			if string(tetrominoe[0][j]) == "." &&
-				string(tetrominoe[1][j]) == "." &&
-				string(tetrominoe[2][j]) == "." &&
-				string(tetrominoe[3][j]) == "." {
-				tetrominoe = DelDotColMinoe(tetrominoe, j)
-			}
-		}
-	}
-	return tetrominoe
-}
-
-func DelDotColMinoe(tetrominoe []string, index int) []string {
-	tabDelDot := []string{}
-	for i := 0; i < len(tetrominoe); i++ {
-		str := ""
-		for j := 0; j < len(tetrominoe[i]); j++ {
-			if j != index {
-				str += string(tetrominoe[i][j])
-			}
-		}
-		tabDelDot = append(tabDelDot, str)
-	}
-	return tabDelDot
-}
-
-func DelDotLine(tetrominoes [][]string) [][]string {
-	finalMinoes := [][]string{}
-	for i := 0; i < len(tetrominoes); i++ {
-		DelLineDot := []string{}
-		for j := 0; j < len(tetrominoes[i]); j++ {
-			if string(tetrominoes[i][j]) == ".." ||
-				string(tetrominoes[i][j]) == "..." ||
-				string(tetrominoes[i][j]) == "...." {
+func PlaceOrDeL(finalTab [][]byte, indexs [][]int, x int, y int, place bool) {
+	for i := 0; i < len(indexs)-1; i++ {
+		for j := 0; j < len(indexs[i]); j++ {
+			if place {
+				a := indexs[len(indexs)-1][0]
+				finalTab[x][indexs[i][j]] = byte(a)
 				continue
 			}
-			DelLineDot = append(DelLineDot, tetrominoes[i][j])
+			finalTab[x][indexs[i][j]] = byte(46)
 		}
-		finalMinoes = append(finalMinoes, DelLineDot)
+		x++
 	}
-	return finalMinoes
-}
-func Solve(tetrominoes [][]string, SquareSize int) [][]byte {
-	finalTab := CreateFinalTab(tetrominoes, SquareSize)
-	for !Backtraking(finalTab, tetrominoes, 0) {
-		SquareSize++
-		finalTab = CreateFinalTab(tetrominoes, SquareSize)
-	}
-	return finalTab
 }
 
-func Backtraking(finalTab [][]byte, tetrominoes [][]string, n int) bool {
+func Backtraking(finalTab [][]byte, tetrominoes [][][]byte, n int) bool {
 	if n == len(tetrominoes) {
 		return true
 	}
-	is := false
-	for i := 0; i < len(tetrominoes); i++ {
-		for j := 0; j < len(tetrominoes); j++ {
-			indexs := getIndexs(tetrominoes[n])
-			indexs, is = FixIndexs(finalTab, indexs, i, j)
-			if is {
-				Place(tetrominoes[n], finalTab, indexs, i, j)
+	for i := 0; i < len(finalTab); i++ {
+		for j := 0; j < len(finalTab[i]); j++ {
+			indexs, itCan := FixIndexs(finalTab, tetrominoes[n], i, j, 65+n)
+			if itCan {
+				PlaceOrDeL(finalTab, indexs, i, j, true)
 				Printer(finalTab)
 				fmt.Println()
 				if Backtraking(finalTab, tetrominoes, n+1) {
 					return true
 				}
-				Delete(tetrominoes[n], finalTab, indexs, i, j)
+				PlaceOrDeL(finalTab, indexs, i, j, false)
 				Printer(finalTab)
 				fmt.Println()
 			}
@@ -269,122 +85,166 @@ func Backtraking(finalTab [][]byte, tetrominoes [][]string, n int) bool {
 	return false
 }
 
-func Delete(tetrominoe []string, finalTab [][]byte, indexs [][]int, i int, j int) [][]byte {
-	index := 0
-	minoIndex := getIndexs(tetrominoe)
-	for k := 0; k < len(minoIndex); k++ {
-		for l, a := 0, 0; l < len(minoIndex[k]); l++ {
-			m := indexs[index][a]
-			finalTab[i][m] = 46
-			if a+1 < len(indexs[index]) {
-				a++
-			}
-		}
-		if index+1 < len(indexs) {
-			index++
-		}
-		if i+1 < len(finalTab) {
-			i++
-		}
+func Solve(tetrominoes [][][]byte, heigth int, supply int) [][]byte {
+	finalTab := CreateTab(heigth, supply)
+	for !Backtraking(finalTab, tetrominoes, 0) {
+		supply++
+		finalTab = CreateTab(heigth, supply)
 	}
 	return finalTab
 }
 
-func getIndexs(tetrominoe []string) [][]int {
-	doubleTabIndex := [][]int{}
-	for i := 0; i < len(tetrominoe); i++ {
-		tabIndexs := []int{}
-		for j := 0; j < len(tetrominoe[i]); j++ {
-			if tetrominoe[i][j] != 46 {
-				tabIndexs = append(tabIndexs, j)
-			}
-		}
-		doubleTabIndex = append(doubleTabIndex, tabIndexs)
-	}
-	return doubleTabIndex
-}
-
-func FixIndexs(finalTab [][]byte, indexs [][]int, i int, j int) ([][]int, bool) {
+func FixIndexs(finalTab [][]byte, tetrominoe [][]byte, indexi int, indexj int, char int) ([][]int, bool) {
+	x := indexi
+	tab := GetIndexs(tetrominoe, char)
 	tmp := [][]int{}
-	for k := range indexs {
+	for k := range tab {
 		tabTmp := []int{}
-		for l := range indexs[k] {
-			tabTmp = append(tabTmp, indexs[k][l])
+		for l := 0; l < len(tab[k]); l++ {
+			tabTmp = append(tabTmp, tab[k][l])
 		}
 		tmp = append(tmp, tabTmp)
 	}
-	index := j
-	for k := 0; k < len(indexs); k++ {
-		for l := 0; l < len(indexs[k]); l++ {
-			if indexs[k][l] == tmp[0][0] {
-				indexs[k][l] = index
-			} else if indexs[k][l]-1 == tmp[0][0] {
-				indexs[k][l] = index + 1
-			} else if indexs[k][l]-2 == tmp[0][0] {
-				indexs[k][l] = index + 2
-			} else if indexs[k][l]-3 == tmp[0][0] {
-				indexs[k][l] = index + 3
-			} else if indexs[k][l]+1 == tmp[0][0] {
-				indexs[k][l] = index - 1
-			} else if indexs[k][l]+2 == tmp[0][0] {
-				indexs[k][l] = index - 2
-			} else if indexs[k][l]+3 == tmp[0][0] {
-				indexs[k][l] = index - 3
+	itCan := true
+	for i := 0; i < len(tab)-1; i++ {
+		for j := 0; j < len(tab[i]); j++ {
+			if tab[i][j] == tmp[0][0] {
+				tab[i][j] = indexj
+			} else if tab[i][j]-1 == tmp[0][0] {
+				tab[i][j] = indexj + 1
+			} else if tab[i][j]-2 == tmp[0][0] {
+				tab[i][j] = indexj + 2
+			} else if tab[i][j]-3 == tmp[0][0] {
+				tab[i][j] = indexj + 3
+			} else if tab[i][j]+1 == tmp[0][0] {
+				tab[i][j] = indexj - 1
+			} else if tab[i][j]+2 == tmp[0][0] {
+				tab[i][j] = indexj - 2
+			} else if tab[i][j]+3 == tmp[0][0] {
+				tab[i][j] = indexj - 3
 			}
-			if indexs[k][l] < 0 || indexs[k][l] > len(finalTab)-1 {
-				indexs = tmp
-				return indexs, false
+			if tab[i][j] < 0 || tab[i][j] > len(finalTab)-1 {
+				tab = tmp
+				return tab, false
+			}
+			current := tab[i][j]
+			if indexi+len(tab) > len(finalTab) ||
+				indexj+len(tab[i]) > len(finalTab[x]) ||
+				finalTab[x][current] != byte(46) {
+				tab = tmp
+				return tab, false
+			}
+		}
+		x++
+	}
+	return tab, itCan
+}
+
+func VerifMinoes(tab [][]int) {
+	for i := 0; i < len(tab)-1; i++ {
+		if i+1 < len(tab)-1 {
+			ok := false
+			for j := 0; j < len(tab[i]); j++ {
+				if j+1 < len(tab[i]) && tab[i][j+1] != tab[i][j]+1 {
+					Error()
+				}
+				for k := 0; k < len(tab[i+1]); k++ {
+					if tab[i][j] == tab[i+1][k] {
+						ok = true
+					}
+				}
+			}
+			if !ok {
+				Error()
 			}
 		}
 	}
-	// for k := range indexs {
-	// 	indexs[k] = Sort(indexs[k])
-	// }
-	return indexs, true
 }
 
-// func Sort(indexs []int) []int {
-// 	for i := range indexs {
-// 		for j := range indexs {
-// 			if i < j {
-// 				i, j = j, i
+func GetIndexs(doubleTab [][]byte, char int) [][]int {
+	tab := []int{}
+	twoTab := [][]int{}
+	diez := 0
+	dot := 0
+	for i := 0; i < 4; i++ {
+		for j := 0; j < 4; j++ {
+			if doubleTab[i][j] == 35 {
+				diez++
+				tab = append(tab, j)
+			}
+			if doubleTab[i][j] == 46 {
+				dot++
+			}
+		}
+		if diez > 0 && diez < 4 && len(tab) == 0 {
+			Error()
+		}
+		if len(tab) != 0 {
+			twoTab = append(twoTab, tab)
+			tab = nil
+		}
+	}
+	if diez != 4 || diez*3 != dot {
+		Error()
+	}
+	tab = append(tab, char)
+	twoTab = append(twoTab, tab)
+	return twoTab
+}
+
+// func ToAlfa(doubleTab [][]byte, char int) {
+// 	for i := 0; i < len(doubleTab); i++ {
+// 		for j := 0; j < len(doubleTab[i]); j++ {
+// 			if doubleTab[i][j] == 35 {
+// 				doubleTab[i][j] = byte(char)
 // 			}
 // 		}
 // 	}
-// 	return indexs
 // }
 
-func Place(tetrominoe []string, finalTab [][]byte, indexs [][]int, i int, j int) [][]byte {
-	index := 0
-	minoIndex := getIndexs(tetrominoe)
-	for k := 0; k < len(minoIndex); k++ {
-		for l, a := 0, 0; l < len(minoIndex[k]); l++ {
-			m := indexs[index][a]
-			s := tetrominoe[k][minoIndex[k][l]]
-			finalTab[i][m] = s
-			if a+1 < len(indexs[index]) {
-				a++
+func TabMinoes(file []byte) [][][]byte {
+	tab := []byte{}
+	doubleTab := [][]byte{}
+	tripleTab := [][][]byte{}
+	for i := 0; i < len(file); i++ {
+		if i == len(file)-1 {
+			if file[i] != 10 {
+				tab = append(tab, file[i])
+			}
+			if len(tab) == 4 {
+				doubleTab = append(doubleTab, tab)
+				tripleTab = append(tripleTab, doubleTab)
+				continue
 			}
 		}
-		if index+1 < len(indexs) {
-			index++
+		if i+1 < len(file) && file[i] == 10 {
+			if file[i+1] != 10 {
+				if len(tab) == 4 {
+					doubleTab = append(doubleTab, tab)
+					tab = nil
+					continue
+				}
+				Error()
+			} else {
+				if len(tab) == 4 {
+					doubleTab = append(doubleTab, tab)
+					tab = nil
+				}
+				if len(doubleTab) == 4 {
+					tripleTab = append(tripleTab, doubleTab)
+					doubleTab = nil
+					i++
+					continue
+				}
+				Error()
+			}
 		}
-		if i+1 < len(finalTab) {
-			i++
-		}
+		tab = append(tab, file[i])
 	}
-	return finalTab
+	return tripleTab
 }
 
-func ItCan(finalTab [][]byte, indexs [][]int, i int) bool {
-	for k := 0; k < len(indexs); k++ {
-		for l := 0; l < len(indexs[k]); l++ {
-			j := indexs[k][l]
-			if i > len(finalTab)-1 || finalTab[i][j] != 46 {
-				return false
-			}
-		}
-		i++
-	}
-	return true
+func Error() {
+	fmt.Println("ERROR")
+	os.Exit(0)
 }
