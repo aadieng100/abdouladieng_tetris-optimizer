@@ -49,36 +49,31 @@ func CreateTab(heigth int, supply int) [][]byte {
 }
 
 func PlaceOrDeL(finalTab [][]byte, indexs [][]int, x int, y int, place bool) {
-	for i := 0; i < len(indexs)-1; i++ {
-		for j := 0; j < len(indexs[i]); j++ {
+	for i := range indexs[:len(indexs)-1] {
+		for j := range indexs[i] {
 			if place {
-				a := indexs[len(indexs)-1][0]
-				finalTab[x][indexs[i][j]] = byte(a)
-				continue
+				finalTab[x][indexs[i][j]] = byte(indexs[len(indexs)-1][0])
+			} else {
+				finalTab[x][indexs[i][j]] = 46
 			}
-			finalTab[x][indexs[i][j]] = byte(46)
 		}
 		x++
 	}
 }
 
-func Backtraking(finalTab [][]byte, tetrominoes [][][]byte, n int) bool {
+func Backtracking(finalTab [][]byte, tetrominoes [][][]byte, n int) bool {
 	if n == len(tetrominoes) {
 		return true
 	}
-	for i := 0; i < len(finalTab); i++ {
-		for j := 0; j < len(finalTab[i]); j++ {
+	for i := range finalTab {
+		for j := range finalTab[i] {
 			indexs, itCan := FixIndexs(finalTab, tetrominoes[n], i, j, 65+n)
 			if itCan {
 				PlaceOrDeL(finalTab, indexs, i, j, true)
-				Printer(finalTab)
-				fmt.Println()
-				if Backtraking(finalTab, tetrominoes, n+1) {
+				if Backtracking(finalTab, tetrominoes, n+1) {
 					return true
 				}
 				PlaceOrDeL(finalTab, indexs, i, j, false)
-				Printer(finalTab)
-				fmt.Println()
 			}
 		}
 	}
@@ -87,7 +82,7 @@ func Backtraking(finalTab [][]byte, tetrominoes [][][]byte, n int) bool {
 
 func Solve(tetrominoes [][][]byte, heigth int, supply int) [][]byte {
 	finalTab := CreateTab(heigth, supply)
-	for !Backtraking(finalTab, tetrominoes, 0) {
+	for !Backtracking(finalTab, tetrominoes, 0) {
 		supply++
 		finalTab = CreateTab(heigth, supply)
 	}
@@ -97,40 +92,22 @@ func Solve(tetrominoes [][][]byte, heigth int, supply int) [][]byte {
 func FixIndexs(finalTab [][]byte, tetrominoe [][]byte, indexi int, indexj int, char int) ([][]int, bool) {
 	x := indexi
 	tab := GetIndexs(tetrominoe, char)
-	tmp := [][]int{}
-	for k := range tab {
-		tabTmp := []int{}
-		for l := 0; l < len(tab[k]); l++ {
-			tabTmp = append(tabTmp, tab[k][l])
-		}
-		tmp = append(tmp, tabTmp)
+	tmp := make([][]int, len(tab))
+	for i := range tab {
+		tmp[i] = make([]int, len(tab[i]))
+		copy(tmp[i], tab[i])
 	}
 	itCan := true
-	for i := 0; i < len(tab)-1; i++ {
-		for j := 0; j < len(tab[i]); j++ {
-			if tab[i][j] == tmp[0][0] {
-				tab[i][j] = indexj
-			} else if tab[i][j]-1 == tmp[0][0] {
-				tab[i][j] = indexj + 1
-			} else if tab[i][j]-2 == tmp[0][0] {
-				tab[i][j] = indexj + 2
-			} else if tab[i][j]-3 == tmp[0][0] {
-				tab[i][j] = indexj + 3
-			} else if tab[i][j]+1 == tmp[0][0] {
-				tab[i][j] = indexj - 1
-			} else if tab[i][j]+2 == tmp[0][0] {
-				tab[i][j] = indexj - 2
-			} else if tab[i][j]+3 == tmp[0][0] {
-				tab[i][j] = indexj - 3
-			}
+	for i := range tab[:len(tab)-1] {
+		for j := range tab[i] {
+			offset := tab[i][j] - tmp[0][0]
+			tab[i][j] = indexj + offset
 			if tab[i][j] < 0 || tab[i][j] > len(finalTab)-1 {
 				tab = tmp
 				return tab, false
 			}
 			current := tab[i][j]
-			if indexi+len(tab) > len(finalTab) ||
-				indexj+len(tab[i]) > len(finalTab[x]) ||
-				finalTab[x][current] != byte(46) {
+			if x >= len(finalTab) || finalTab[x][current] != 46 {
 				tab = tmp
 				return tab, false
 			}
@@ -191,16 +168,6 @@ func GetIndexs(doubleTab [][]byte, char int) [][]int {
 	twoTab = append(twoTab, tab)
 	return twoTab
 }
-
-// func ToAlfa(doubleTab [][]byte, char int) {
-// 	for i := 0; i < len(doubleTab); i++ {
-// 		for j := 0; j < len(doubleTab[i]); j++ {
-// 			if doubleTab[i][j] == 35 {
-// 				doubleTab[i][j] = byte(char)
-// 			}
-// 		}
-// 	}
-// }
 
 func TabMinoes(file []byte) [][][]byte {
 	tab := []byte{}
