@@ -29,7 +29,6 @@ func main() {
 			indexs := GetIndexs(tetrominoes[i], char)
 			Indexs = append(Indexs, indexs)
 			VerifMinoes(Indexs[i])
-			//ToAlfa(tetrominoes[i], char)
 		}
 		finalTab := Solve(Indexs, len(Indexs), 0)
 		Printer(finalTab)
