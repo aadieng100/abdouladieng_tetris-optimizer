@@ -92,7 +92,6 @@ func Solve(Indexs [][][]int, heigth int, supply int) [][]byte {
 }
 
 func FixIndexs(finalTab [][]byte, Indexs [][]int, indexi int, indexj int, char int) ([][]int, bool) {
-	x := indexi
 	tmp := make([][]int, len(Indexs))
 	for i := range Indexs {
 		tmp[i] = make([]int, len(Indexs[i]))
@@ -106,12 +105,11 @@ func FixIndexs(finalTab [][]byte, Indexs [][]int, indexi int, indexj int, char i
 			if tmp[i][j] < 0 || tmp[i][j] > len(finalTab)-1 {
 				return Indexs, false
 			}
-			current := tmp[i][j]
-			if x >= len(finalTab) || finalTab[x][current] != 46 {
+			if indexi >= len(finalTab) || finalTab[indexi][tmp[i][j]] != 46 {
 				return Indexs, false
 			}
 		}
-		x++
+		indexi++
 	}
 	return tmp, itCan
 }
