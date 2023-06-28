@@ -24,12 +24,14 @@ func main() {
 			Error()
 		}
 		tetrominoes := TabMinoes(file)
-		for i := 0; i < len(tetrominoes); i++ {
-			indexs := GetIndexs(tetrominoes[i], 0)
-			VerifMinoes(indexs)
+		Indexs := [][][]int{}
+		for i, char := 0, 65; i < len(tetrominoes); i, char = i+1, char+1 {
+			indexs := GetIndexs(tetrominoes[i], char)
+			Indexs = append(Indexs, indexs)
+			VerifMinoes(Indexs[i])
 			//ToAlfa(tetrominoes[i], char)
 		}
-		finalTab := Solve(tetrominoes, len(tetrominoes), 0)
+		finalTab := Solve(Indexs, len(Indexs), 0)
 		Printer(finalTab)
 		return
 	}
@@ -61,16 +63,16 @@ func PlaceOrDeL(finalTab [][]byte, indexs [][]int, x int, y int, place bool) {
 	}
 }
 
-func Backtracking(finalTab [][]byte, tetrominoes [][][]byte, n int) bool {
-	if n == len(tetrominoes) {
+func Backtracking(finalTab [][]byte, Indexs [][][]int, n int) bool {
+	if n == len(Indexs) {
 		return true
 	}
 	for i := range finalTab {
 		for j := range finalTab[i] {
-			indexs, itCan := FixIndexs(finalTab, tetrominoes[n], i, j, 65+n)
+			indexs, itCan := FixIndexs(finalTab, Indexs[n], i, j, 65+n)
 			if itCan {
 				PlaceOrDeL(finalTab, indexs, i, j, true)
-				if Backtracking(finalTab, tetrominoes, n+1) {
+				if Backtracking(finalTab, Indexs, n+1) {
 					return true
 				}
 				PlaceOrDeL(finalTab, indexs, i, j, false)
@@ -80,41 +82,38 @@ func Backtracking(finalTab [][]byte, tetrominoes [][][]byte, n int) bool {
 	return false
 }
 
-func Solve(tetrominoes [][][]byte, heigth int, supply int) [][]byte {
+func Solve(Indexs [][][]int, heigth int, supply int) [][]byte {
 	finalTab := CreateTab(heigth, supply)
-	for !Backtracking(finalTab, tetrominoes, 0) {
+	for !Backtracking(finalTab, Indexs, 0) {
 		supply++
 		finalTab = CreateTab(heigth, supply)
 	}
 	return finalTab
 }
 
-func FixIndexs(finalTab [][]byte, tetrominoe [][]byte, indexi int, indexj int, char int) ([][]int, bool) {
+func FixIndexs(finalTab [][]byte, Indexs [][]int, indexi int, indexj int, char int) ([][]int, bool) {
 	x := indexi
-	tab := GetIndexs(tetrominoe, char)
-	tmp := make([][]int, len(tab))
-	for i := range tab {
-		tmp[i] = make([]int, len(tab[i]))
-		copy(tmp[i], tab[i])
+	tmp := make([][]int, len(Indexs))
+	for i := range Indexs {
+		tmp[i] = make([]int, len(Indexs[i]))
+		copy(tmp[i], Indexs[i])
 	}
 	itCan := true
-	for i := range tab[:len(tab)-1] {
-		for j := range tab[i] {
-			offset := tab[i][j] - tmp[0][0]
-			tab[i][j] = indexj + offset
-			if tab[i][j] < 0 || tab[i][j] > len(finalTab)-1 {
-				tab = tmp
-				return tab, false
+	for i := range tmp[:len(tmp)-1] {
+		for j := range tmp[i] {
+			offset := tmp[i][j] - Indexs[0][0]
+			tmp[i][j] = indexj + offset
+			if tmp[i][j] < 0 || tmp[i][j] > len(finalTab)-1 {
+				return Indexs, false
 			}
-			current := tab[i][j]
+			current := tmp[i][j]
 			if x >= len(finalTab) || finalTab[x][current] != 46 {
-				tab = tmp
-				return tab, false
+				return Indexs, false
 			}
 		}
 		x++
 	}
-	return tab, itCan
+	return tmp, itCan
 }
 
 func VerifMinoes(tab [][]int) {
