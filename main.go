@@ -49,18 +49,88 @@ func CreateTab(heigth int, supply int) [][]byte {
 	return finalTab
 }
 
-func PlaceOrDeL(finalTab [][]byte, indexs [][]int, x int, y int, place bool) {
+func ItCan(finalTab [][]byte, indexs [][]int, x int, y int) bool {
+	tmpy := y
+	tmpx := x
 	for i := range indexs[:len(indexs)-1] {
-		for j := range indexs[i] {
-			if place {
-				finalTab[x][indexs[i][j]] = byte(indexs[len(indexs)-1][0])
-			} else {
-				finalTab[x][indexs[i][j]] = 46
+		y = tmpy
+		incre := false
+		for j := 0; j < len(indexs[i]); j++ {
+			if !incre && i > 0 && indexs[i][j] != indexs[0][0] {
+				if indexs[i][j]-1 == indexs[0][0] {
+					y = y + 1
+				} else if indexs[i][j]-2 == indexs[0][0] {
+					y = y + 2
+				} else if indexs[i][j]-3 == indexs[0][0] {
+					y = y + 3
+				} else if indexs[i][j]+1 == indexs[0][0] {
+					y = y - 1
+				} else if indexs[i][j]+2 == indexs[0][0] {
+					y = y - 2
+				} else if indexs[i][j]+3 == indexs[0][0] {
+					y = y - 3
+				}
 			}
+			if x >= len(finalTab) || y >= len(finalTab[x]) || y < 0 || finalTab[x][y] != 46 {
+				return false
+			}
+			y++
+			incre = true
 		}
 		x++
 	}
+	x = tmpx
+	return true
 }
+
+func PlaceOrDeL(finalTab [][]byte, indexs [][]int, x int, y int, place bool) {
+	tmp := y
+	tmpx := x
+	for i := range indexs[:len(indexs)-1] {
+		y = tmp
+		incre := false
+		for j := 0; j < len(indexs[i]); j++ {
+			if !incre && i > 0 && indexs[i][j] != indexs[0][0] {
+				if indexs[i][j]-1 == indexs[0][0] {
+					y = y + 1
+				} else if indexs[i][j]-2 == indexs[0][0] {
+					y = y + 2
+				} else if indexs[i][j]-3 == indexs[0][0] {
+					y = y + 3
+				} else if indexs[i][j]+1 == indexs[0][0] {
+					y = y - 1
+				} else if indexs[i][j]+2 == indexs[0][0] {
+					y = y - 2
+				} else if indexs[i][j]+3 == indexs[0][0] {
+					y = y - 3
+				}
+			}
+			if place {
+				finalTab[x][y] = byte(indexs[len(indexs)-1][0])
+			} else {
+				finalTab[x][y] = 46
+			}
+			y++
+			incre = true
+		}
+		x++
+	}
+	y = tmp
+	x = tmpx
+}
+
+// func PlaceOrDeL(finalTab [][]byte, indexs [][]int, x int, y int, place bool) {
+// 	for i := range indexs[:len(indexs)-1] {
+// 		for j := range indexs[i] {
+// 			if place {
+// 				finalTab[x][indexs[i][j]] = byte(indexs[len(indexs)-1][0])
+// 			} else {
+// 				finalTab[x][indexs[i][j]] = 46
+// 			}
+// 		}
+// 		x++
+// 	}
+// }
 
 func Backtracking(finalTab [][]byte, Indexs [][][]int, n int) bool {
 	if n == len(Indexs) {
@@ -68,13 +138,13 @@ func Backtracking(finalTab [][]byte, Indexs [][][]int, n int) bool {
 	}
 	for i := range finalTab {
 		for j := range finalTab[i] {
-			indexs, itCan := FixIndexs(finalTab, Indexs[n], i, j, 65+n)
-			if itCan {
-				PlaceOrDeL(finalTab, indexs, i, j, true)
+			//indexs, itCan := FixIndexs(finalTab, Indexs[n], i, j, 65+n)
+			if ItCan(finalTab, Indexs[n], i, j) {
+				PlaceOrDeL(finalTab, Indexs[n], i, j, true)
 				if Backtracking(finalTab, Indexs, n+1) {
 					return true
 				}
-				PlaceOrDeL(finalTab, indexs, i, j, false)
+				PlaceOrDeL(finalTab, Indexs[n], i, j, false)
 			}
 		}
 	}
