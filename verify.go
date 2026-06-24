@@ -5,113 +5,134 @@ import (
 	"os"
 )
 
-// Will put tetrominoes in a byte tab
+// TabMinoes parses the raw file bytes into a list of 4x4 tetrominoes.
+// It enforces that each tetromino is exactly 4x4 characters, and separated by a single newline.
 func TabMinoes(file []byte) [][][]byte {
-	tab := []byte{}
-	doubleTab := [][]byte{}
-	tripleTab := [][][]byte{}
+	row := []byte{}
+	tetromino := [][]byte{}
+	tetrominoes := [][][]byte{}
+	
 	for i := 0; i < len(file); i++ {
+		// Handle EOF (last character of the file)
 		if i == len(file)-1 {
-			if file[i] != 10 {
-				tab = append(tab, file[i])
+			if file[i] != '\n' {
+				row = append(row, file[i])
 			}
-			if len(tab) == 4 {
-				doubleTab = append(doubleTab, tab)
-				tripleTab = append(tripleTab, doubleTab)
+			if len(row) == 4 {
+				tetromino = append(tetromino, row)
+				tetrominoes = append(tetrominoes, tetromino)
 				continue
 			}
 		}
-		if i+1 < len(file) && file[i] == 10 {
-			if file[i+1] != 10 {
-				if len(tab) == 4 {
-					doubleTab = append(doubleTab, tab)
-					tab = nil
+		
+		// Handle newline characters which separate lines
+		if i+1 < len(file) && file[i] == '\n' {
+			if file[i+1] != '\n' {
+				// Single newline: marks the end of a row in the current tetromino grid
+				if len(row) == 4 {
+					tetromino = append(tetromino, row)
+					row = nil
 					continue
 				}
 				Error()
 			} else {
-				if len(tab) == 4 {
-					doubleTab = append(doubleTab, tab)
-					tab = nil
+				// Double newline: marks the boundary between two tetromino grids
+				if len(row) == 4 {
+					tetromino = append(tetromino, row)
+					row = nil
 				}
-				if len(doubleTab) == 4 {
-					tripleTab = append(tripleTab, doubleTab)
-					doubleTab = nil
-					i++
+				if len(tetromino) == 4 {
+					tetrominoes = append(tetrominoes, tetromino)
+					tetromino = nil
+					i++ // Skip the second newline
 					continue
 				}
 				Error()
 			}
 		}
-		tab = append(tab, file[i])
+		
+		row = append(row, file[i])
 	}
-	return tripleTab
+	return tetrominoes
 }
 
-// Verify if we have a correct tetrominoe
-func VerifMinoes(tab [][]int) {
-	for i := 0; i < len(tab)-1; i++ {
-		if i+1 < len(tab)-1 {
-			ok := false
-			for j := 0; j < len(tab[i]); j++ {
-				if j+1 < len(tab[i]) && tab[i][j+1] != tab[i][j]+1 {
+// VerifMinoes verifies that a tetromino is orthogonally connected.
+// It checks that each row's '#' blocks are contiguous and that there is at least one
+// vertical connection between adjacent rows of the tetromino.
+func VerifMinoes(coords [][]int) {
+	for i := 0; i < len(coords)-1; i++ {
+		if i+1 < len(coords)-1 {
+			connected := false
+			// Check that blocks on row i are contiguous
+			for j := 0; j < len(coords[i]); j++ {
+				if j+1 < len(coords[i]) && coords[i][j+1] != coords[i][j]+1 {
 					Error()
 				}
-				for k := 0; k < len(tab[i+1]); k++ {
-					if tab[i][j] == tab[i+1][k] {
-						ok = true
+				// Check for at least one orthogonal vertical connection with row i+1
+				for k := 0; k < len(coords[i+1]); k++ {
+					if coords[i][j] == coords[i+1][k] {
+						connected = true
 					}
 				}
 			}
-			if !ok {
+			if !connected {
 				Error()
 			}
 		}
 	}
 }
 
-// Will get indexs of tetrominoes
-func GetIndexs(doubleTab [][]byte, char int) [][]int {
-	tab := []int{}
-	twoTab := [][]int{}
-	diez := 0
-	dot := 0
-	for i := 0; i < len(doubleTab); i++ {
-		for j := 0; j < len(doubleTab[i]); j++ {
-			if doubleTab[i][j] == 35 {
-				diez++
-				tab = append(tab, j)
+// GetIndexs extracts the 0-indexed column coordinates for each row containing a '#' character.
+// It verifies that there are exactly 4 '#' characters and 12 '.' characters per tetromino.
+// It appends the character label identifier (e.g. 'A', 'B') as the final element.
+func GetIndexs(tetromino [][]byte, char int) [][]int {
+	rowCoords := []int{}
+	coords := [][]int{}
+	hashCount := 0
+	dotCount := 0
+	
+	for i := 0; i < len(tetromino); i++ {
+		for j := 0; j < len(tetromino[i]); j++ {
+			if tetromino[i][j] == '#' {
+				hashCount++
+				rowCoords = append(rowCoords, j)
 			}
-			if doubleTab[i][j] == 46 {
-				dot++
+			if tetromino[i][j] == '.' {
+				dotCount++
 			}
 		}
-		if diez > 0 && diez < 4 && len(tab) == 0 {
+		// A row check to fail early if unexpected structures are found
+		if hashCount > 0 && hashCount < 4 && len(rowCoords) == 0 {
 			Error()
 		}
-		if len(tab) != 0 {
-			twoTab = append(twoTab, tab)
-			tab = nil
+		if len(rowCoords) != 0 {
+			coords = append(coords, rowCoords)
+			rowCoords = nil
 		}
 	}
-	if diez != 4 || diez*3 != dot {
+	
+	// A valid tetromino must have exactly 4 '#' blocks and 12 '.' empty spaces
+	if hashCount != 4 || hashCount*3 != dotCount {
 		Error()
 	}
-	tab = append(tab, char)
-	twoTab = append(twoTab, tab)
-	return twoTab
+	
+	// Store the tetromino character label at the end of the coordinate slice
+	labelInfo := []int{char}
+	coords = append(coords, labelInfo)
+	return coords
 }
 
-// Put tetrominoes indexs in a tab
+// TakeAllIndexs extracts coordinates for all tetrominoes and runs shape verification.
 func TakeAllIndexs(tetrominoes [][][]byte) [][][]int {
-	Indexs := [][][]int{}
+	allCoords := [][][]int{}
 	for i, char := 0, 65; i < len(tetrominoes); i, char = i+1, char+1 {
-		Indexs = append(Indexs, GetIndexs(tetrominoes[i], char))
-		VerifMinoes(Indexs[i])
+		allCoords = append(allCoords, GetIndexs(tetrominoes[i], char))
+		VerifMinoes(allCoords[i])
 	}
-	return Indexs
+	return allCoords
 }
 
+// Error prints "ERROR" to stdout and terminates the program with exit code 0 as required.
 func Error() {
 	fmt.Println("ERROR")
 	os.Exit(0)
